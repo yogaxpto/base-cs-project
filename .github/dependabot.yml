@@ -25,9 +25,8 @@ updates:
       interval: weekly
     assignees:
       - "yogaxpto"
-  - package-ecosystem: "nuget"
-    directory: "/"
-    schedule:
-      interval: "monthly"
-    assignees:
-      - "yogaxpto"
+  # NuGet is handled by Renovate (.github/renovate.json), not Dependabot:
+  # Dependabot's NuGet updater regenerates packages.lock.json for a single
+  # target framework, dropping the other <TargetFrameworks> sections, which
+  # fails CI's locked-mode restore (dependabot/dependabot-core#13474).
+  # Renovate runs `dotnet restore --force-evaluate`, which keeps them all.
