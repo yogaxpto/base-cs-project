@@ -1,0 +1,36 @@
+<Project>
+
+  <!-- Settings shared by every project in the repository. The multi-targeting
+       here is what the CI matrix discovers and tests against. -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- Strictness: nullable reference types, the .NET analyzers and the IDE
+       code-style rules all run as part of the build and are promoted to
+       errors. -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-Recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- NETSDK1188: satellite-resource locales cannot be validated when the
+         SDK itself runs with invariant globalization (the Alpine container
+         case). Pure noise from test-host packages. -->
+    <NoWarn>$(NoWarn);NETSDK1188</NoWarn>
+  </PropertyGroup>
+
+  <!-- Reproducible restores: packages.lock.json pins the dependency graph.
+       On CI restores are locked so an unexpected version change fails the
+       build instead of silently sliding forward. -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>
