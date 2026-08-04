@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <RootNamespace>BaseCsProject</RootNamespace>
+    <AssemblyName>BaseCsProject</AssemblyName>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package metadata">
+    <PackageId>BaseCsProject</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Diogo Santos Martins</Authors>
+    <Description>A base template for C# projects with a containerized development workflow.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/yogaxpto/base-cs-project</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/yogaxpto/base-cs-project</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

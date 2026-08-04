@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.image-tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set image tag
+        id: meta
+        run: echo "image-tag=test-image" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        # The `ci` stage, not the default (`dev`) one: the jobs below bind-mount
+        # this checkout and need to write bin/ and obj/ into it as root.
+        run: docker build --target ci -t test-image .
+
+      - name: Save Docker image to tarball
+        run: |
+          mkdir -p image-cache
+          docker save -o image-cache/test-image.tar test-image
+
+      - name: Cache Docker image
+        uses: actions/cache@v6
+        with:
+          path: image-cache/test-image.tar
+          key: test-image-${{ hashFiles('Dockerfile', '**/*.csproj', '**/packages.lock.json', 'Directory.Build.props', 'Directory.Packages.props', 'global.json') }}
+
+  lint:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/load-cached-docker-image
+        with:
+          image-name: test-image
+
+      - name: Run dotnet format
+        run: |
+          docker run --rm \
+            -e CI=true \
+            -v ${{ github.workspace }}:/repo \
+            -w /repo \
+            test-image \
+            dotnet format BaseCsProject.slnx --verify-no-changes
+
+  analyzers:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/load-cached-docker-image
+        with:
+          image-name: test-image
+
+      - name: Run dotnet build (analyzers as errors)
+        run: |
+          docker run --rm \
+            -e CI=true \
+            -v ${{ github.workspace }}:/repo \
+            -w /repo \
+            test-image \
+            dotnet build BaseCsProject.slnx
+
+  tests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/load-cached-docker-image
+        with:
+          image-name: test-image
+
+      - name: Run dotnet test
+        run: |
+          docker run --rm \
+            -e CI=true \
+            -v ${{ github.workspace }}:/repo \
+            -w /repo \
+            test-image \
+            dotnet test BaseCsProject.slnx --collect:"XPlat Code Coverage"

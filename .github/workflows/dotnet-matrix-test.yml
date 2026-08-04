@@ -1,0 +1,59 @@
+name: .NET Matrix Tests
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  discover-versions:
+    name: Discover .NET Versions
+    runs-on: ubuntu-latest
+    outputs:
+      dotnet-versions: ${{ steps.get-versions.outputs.dotnet-versions }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Parse target frameworks from Directory.Build.props
+        id: get-versions
+        run: |
+          # Extract e.g. "net8.0;net10.0" -> ["8.0.x", "10.0.x"]
+          TFMS=$(sed -n 's|.*<TargetFrameworks>\(.*\)</TargetFrameworks>.*|\1|p' Directory.Build.props)
+          VERSIONS=$(echo "$TFMS" | tr ';' '\n' | sed 's/^net//; s/$/.x/' | jq -R . | jq -cs .)
+          echo "dotnet-versions=$VERSIONS" >> $GITHUB_OUTPUT
+          echo "Discovered .NET SDK versions: $VERSIONS"
+
+  test:
+    name: Test (.NET ${{ matrix.dotnet-version }})
+    needs: discover-versions
+    strategy:
+      matrix:
+        dotnet-version: ${{ fromJson(needs.discover-versions.outputs.dotnet-versions) }}
+      fail-fast: false
+    runs-on: ubuntu-latest
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v5
+        with:
+          # The highest SDK builds every lower target framework; matrix
+          # entries below the latest only need their runtime installed.
+          dotnet-version: |
+            ${{ matrix.dotnet-version }}
+            10.0.x
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      - name: Restore dependencies
+        run: dotnet restore BaseCsProject.slnx --locked-mode
+
+      - name: Run tests for this runtime
+        run: |
+          # Map SDK-style version (8.0.x) to the target framework (net8.0).
+          TFM="net$(echo '${{ matrix.dotnet-version }}' | sed 's/\.x$//')"
+          echo "Testing against $TFM"
+          dotnet test BaseCsProject.slnx --framework "$TFM" --no-restore

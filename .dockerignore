@@ -1,0 +1,18 @@
+# The image COPYs the manifests it needs explicitly; everything below is local
+# build output or editor/VCS state that only slows the context upload down.
+**/bin/
+**/obj/
+**/TestResults/
+artifacts/
+*.binlog
+
+.git/
+.gitignore
+
+.vs/
+.idea/
+*.user
+.DS_Store
+
+# CI scratch space (see .github/workflows/dotnet-ci.yml).
+image-cache/
