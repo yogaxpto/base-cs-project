@@ -1,0 +1,22 @@
+name: Load Cached Docker Image
+description: Restores and loads a cached Docker image from tarball
+inputs:
+  image-name:
+    description: Name of the Docker image file (without .tar)
+    required: true
+    default: test-image
+runs:
+  using: "composite"
+  steps:
+    - name: Restore cached Docker image
+      id: cache
+      uses: actions/cache@v6
+      with:
+        path: image-cache/${{ inputs.image-name }}.tar
+        key: ${{ inputs.image-name }}-${{ hashFiles('Dockerfile', 'pyproject.toml', 'uv.lock') }}
+
+    - name: Load Docker image
+      if: steps.cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        docker load -i image-cache/${{ inputs.image-name }}.tar
